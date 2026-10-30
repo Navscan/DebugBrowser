@@ -3,70 +3,961 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>DebugOTool – Bookmarklet Launcher</title>
-    <link rel="stylesheet" href="DebugOTool.css" />
+    <title>🐞 DebugOTool – Full Console</title>
+    <style>
+        /* ============================================================
+           DEBUGOTOOL CSS – Floating Button & Panel v3.1
+           ============================================================ */
+        #debugToggleBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            top: auto;
+            left: auto;
+            z-index: 99999;
+            background: #1a2332;
+            color: #f5c842;
+            border: 2px solid #f5c842;
+            border-radius: 50%;
+            width: 52px;
+            height: 52px;
+            font-size: 26px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: grab;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            touch-action: none;
+            user-select: none;
+        }
+        #debugToggleBtn:hover {
+            transform: scale(1.12);
+            box-shadow: 0 6px 24px rgba(245, 200, 66, 0.25);
+        }
+        #debugToggleBtn:active {
+            cursor: grabbing;
+        }
+
+        #debugPanel {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 10px;
+            width: 92%;
+            max-width: 500px;
+            max-height: 78vh;
+            background: #0f1724;
+            border: 1px solid #2a3a4a;
+            border-radius: 18px;
+            padding: 16px 16px 12px;
+            padding-top: 0;
+            z-index: 99999;
+            box-shadow: 0 12px 48px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(12px);
+            overflow-y: auto;
+            color: #e8edf5;
+            font-family: 'Segoe UI', 'SF Mono', 'Fira Code', monospace;
+            font-size: 12px;
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        #debugPanel::-webkit-scrollbar {
+            width: 5px;
+        }
+        #debugPanel::-webkit-scrollbar-track {
+            background: #1a2332;
+            border-radius: 8px;
+        }
+        #debugPanel::-webkit-scrollbar-thumb {
+            background: #f5c842;
+            border-radius: 8px;
+        }
+
+        #debugPanelHeader {
+            cursor: grab;
+            padding: 14px 0 8px 0;
+            border-radius: 18px 18px 0 0;
+            margin-bottom: 0.4rem;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #1e2d3d;
+            position: sticky;
+            top: 0;
+            background: #0f1724;
+            z-index: 10;
+        }
+        #debugPanelHeader:active {
+            cursor: grabbing;
+        }
+        #debugPanelHeader .title {
+            font-weight: 700;
+            color: #f5c842;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        #debugPanelHeader .title span {
+            font-size: 18px;
+        }
+
+        .debug-label {
+            color: #8a9bb0;
+            font-weight: 500;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+        }
+        .debug-value {
+            color: #e8edf5;
+            font-weight: 400;
+            word-break: break-all;
+        }
+        .debug-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px 12px;
+            margin: 6px 0 8px;
+            font-size: 11px;
+        }
+        .debug-info-grid .item {
+            display: flex;
+            justify-content: space-between;
+            padding: 2px 0;
+            border-bottom: 1px solid #1a2332;
+        }
+        .debug-info-grid .item .label {
+            color: #8a9bb0;
+        }
+        .debug-info-grid .item .value {
+            color: #e8edf5;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #1e2d3d;
+            margin: 0.5rem 0;
+        }
+
+        /* ---- Section Headers ---- */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0 4px;
+        }
+        .section-header .label {
+            font-weight: 600;
+            color: #f5c842;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .section-header .badge {
+            background: #f5c842;
+            color: #0f1724;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 0 8px;
+            border-radius: 10px;
+            line-height: 16px;
+            min-width: 18px;
+            text-align: center;
+        }
+        .section-header .actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        /* ---- Log Containers ---- */
+        .log-container {
+            background: #080e18;
+            border-radius: 6px;
+            padding: 0.4rem 0.5rem;
+            max-height: 160px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+            color: #d0d9e8;
+            margin-top: 0.2rem;
+            border: 1px solid #1a2332;
+            scroll-behavior: smooth;
+        }
+        .log-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        .log-container::-webkit-scrollbar-track {
+            background: #080e18;
+        }
+        .log-container::-webkit-scrollbar-thumb {
+            background: #2a3a4a;
+            border-radius: 4px;
+        }
+
+        .log-container .log-entry {
+            padding: 0.1rem 0;
+            border-bottom: 1px solid #121c2a;
+            display: flex;
+            gap: 8px;
+            align-items: baseline;
+            font-size: 11px;
+        }
+        .log-container .log-entry .log-time {
+            color: #5a6f82;
+            font-size: 0.55rem;
+            flex-shrink: 0;
+            min-width: 60px;
+        }
+        .log-container .log-entry .log-type {
+            font-weight: 700;
+            flex-shrink: 0;
+            min-width: 44px;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .log-container .log-entry .log-type.log {
+            color: #4cd9b2;
+        }
+        .log-container .log-entry .log-type.error {
+            color: #ff6b6b;
+        }
+        .log-container .log-entry .log-type.warn {
+            color: #f5b342;
+        }
+        .log-container .log-entry .log-msg {
+            word-break: break-word;
+            color: #c8d0e0;
+        }
+
+        .api-log-entry {
+            padding: 0.1rem 0;
+            border-bottom: 1px solid #121c2a;
+            font-size: 10px;
+            display: flex;
+            gap: 6px;
+            align-items: baseline;
+            color: #b0bccf;
+        }
+        .api-log-entry .api-time {
+            color: #5a6f82;
+            font-size: 0.5rem;
+            flex-shrink: 0;
+            min-width: 60px;
+        }
+        .api-log-entry .api-status {
+            font-weight: 700;
+            flex-shrink: 0;
+            min-width: 32px;
+            font-size: 0.6rem;
+        }
+        .api-log-entry .api-status.ok {
+            color: #4cd9b2;
+        }
+        .api-log-entry .api-status.err {
+            color: #ff6b6b;
+        }
+        .api-log-entry .api-method {
+            color: #f5c842;
+            font-weight: 600;
+            flex-shrink: 0;
+            min-width: 40px;
+            font-size: 0.55rem;
+        }
+        .api-log-entry .api-url {
+            color: #8a9bb0;
+            word-break: break-all;
+            font-size: 0.55rem;
+        }
+
+        /* ---- Console Input ---- */
+        #consoleInputArea {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.3rem;
+        }
+        #consoleInput {
+            flex: 1;
+            background: #080e18;
+            border: 1px solid #1e2d3d;
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            color: #e8edf5;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.75rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        #consoleInput:focus {
+            border-color: #f5c842;
+        }
+        #consoleInput::placeholder {
+            color: #3a4a5a;
+        }
+
+        .btn-small {
+            background: transparent;
+            border: 1px solid #1e2d3d;
+            color: #8a9bb0;
+            padding: 0.15rem 0.7rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-family: inherit;
+            transition: all 0.15s;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            height: 22px;
+        }
+        .btn-small:hover {
+            border-color: #f5c842;
+            color: #f5c842;
+            background: rgba(245, 200, 66, 0.06);
+        }
+        .btn-small.copy-btn {
+            border-color: #2a4a5a;
+        }
+        .btn-small.copy-btn:hover {
+            border-color: #4cd9b2;
+            color: #4cd9b2;
+        }
+        .btn-small.danger-btn {
+            border-color: #3a2a2a;
+        }
+        .btn-small.danger-btn:hover {
+            border-color: #ff6b6b;
+            color: #ff6b6b;
+        }
+        .btn-small.primary-btn {
+            border-color: #f5c842;
+            color: #f5c842;
+        }
+        .btn-small.primary-btn:hover {
+            background: rgba(245, 200, 66, 0.12);
+        }
+
+        #consoleOutput {
+            background: #080e18;
+            border-radius: 6px;
+            padding: 0.4rem 0.5rem;
+            max-height: 140px;
+            overflow-y: auto;
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.7rem;
+            white-space: pre-wrap;
+            color: #c8d0e0;
+            margin-top: 0.2rem;
+            border: 1px solid #1a2332;
+            scroll-behavior: smooth;
+            min-height: 40px;
+        }
+        #consoleOutput::-webkit-scrollbar {
+            width: 4px;
+        }
+        #consoleOutput::-webkit-scrollbar-track {
+            background: #080e18;
+        }
+        #consoleOutput::-webkit-scrollbar-thumb {
+            background: #2a3a4a;
+            border-radius: 4px;
+        }
+
+        /* ---- Toast notification ---- */
+        .debug-toast {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            background: #1a2332;
+            border: 1px solid #f5c842;
+            color: #e8edf5;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-size: 13px;
+            z-index: 999999;
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+            opacity: 0;
+            transform: translateY(12px);
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            pointer-events: none;
+        }
+        .debug-toast.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .debug-toast.success {
+            border-color: #4cd9b2;
+        }
+        .debug-toast.error {
+            border-color: #ff6b6b;
+        }
+
+        /* ---- Responsive tweaks ---- */
+        @media (max-width: 480px) {
+            #debugPanel {
+                width: 96%;
+                right: 2%;
+                bottom: 76px;
+                max-height: 74vh;
+                padding: 12px 12px 10px;
+                font-size: 11px;
+            }
+            .debug-info-grid {
+                grid-template-columns: 1fr;
+                gap: 2px;
+            }
+            #debugToggleBtn {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                bottom: 14px;
+                right: 14px;
+            }
+            .log-container .log-entry {
+                font-size: 10px;
+                flex-wrap: wrap;
+                gap: 2px;
+            }
+            .log-container .log-entry .log-time {
+                min-width: 44px;
+                font-size: 0.5rem;
+            }
+            .log-container .log-entry .log-type {
+                min-width: 32px;
+                font-size: 0.5rem;
+            }
+            .section-header .label {
+                font-size: 11px;
+            }
+            #consoleInput {
+                font-size: 0.7rem;
+            }
+            .btn-small {
+                font-size: 0.55rem;
+                padding: 0.1rem 0.5rem;
+                height: 20px;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🐞 DebugOTool <span class="badge">v2.0</span></h1>
-            <p class="sub">Inject the debug bar + panel into any staging page.</p>
-        </header>
 
-        <div class="card">
-            <h2>📌 Step 1: Host the script</h2>
-            <p>Place <code>DebugOTool.js</code> and <code>DebugOTool.css</code> in your staging folder. 
-            <br><em>Example: <code>/var/www/staging.treasuretrail/tools/</code></em></p>
-        </div>
+    <!-- ============================================================
+    DEBUGOTOOL UI – injected into the page
+    ============================================================ -->
+    <button id="debugToggleBtn" aria-label="Toggle Debug Panel">🐞</button>
 
-        <div class="card gold-border">
-            <h2>📋 Step 2: Create the Bookmarklet</h2>
-            <p>Copy the code below, create a new bookmark in your browser, and paste it into the <strong>URL field</strong>.</p>
-            
-            <div class="code-container">
-                <code id="bookmarkletCode">javascript:(function(){var s=document.createElement('script');s.src='https://staging.treasuretrail.africa/tools/DebugOTool.js';document.head.appendChild(s);})();</code>
+    <div id="debugPanel">
+        <!-- Header -->
+        <div id="debugPanelHeader">
+            <span class="title"><span>🐞</span> Debug Report</span>
+            <div style="display:flex; gap:5px;">
+                <button id="copyDebugBtn" class="btn-small" title="Copy full report">📋 All</button>
+                <button id="clearDebugBtn" class="btn-small danger-btn" title="Clear API logs">🗑️ API</button>
             </div>
-            
-            <button id="copyBtn" class="primary-btn">📋 Copy Bookmarklet Code</button>
         </div>
 
-        <div class="card">
-            <h2>📱 Step 3: Download DebugBrowser APK</h2>
-            <p>Get the native Android app with built‑in debugging:</p>
-            <a href="/downloads/DebugBrowser.apk" class="primary-btn" download>⬇️ Download APK</a>
+        <!-- Info grid -->
+        <div class="debug-info-grid">
+            <div class="item"><span class="label">Token</span><span class="value" id="debugToken">(none)</span></div>
+            <div class="item"><span class="label">Client</span><span class="value" id="debugClientCode">(none)</span></div>
+            <div class="item"><span class="label">Email</span><span class="value" id="debugEmail">(none)</span></div>
+            <div class="item"><span class="label">Franchise</span><span class="value" id="debugFranchise">(none)</span></div>
         </div>
+        <hr />
 
-        <div class="card">
-            <h2>🚀 Step 4: How to use it</h2>
-            <ol>
-                <li>Open your staging Onboarding page (<code>https://staging.treasuretrail.africa/onboarding</code>).</li>
-                <li>Tap your browser bookmarks and select <strong>"DebugOTool"</strong>.</li>
-                <li>The gold debug bar and 🐞 button will instantly appear on the page!</li>
-            </ol>
+        <!-- API Log -->
+        <div class="section-header">
+            <span class="label">📡 API Log <span class="badge" id="apiBadge">0</span></span>
+            <div class="actions">
+                <button id="copyApiBtn" class="btn-small copy-btn" title="Copy API logs">📋 Copy</button>
+                <button id="toggleApiLogBtn" class="btn-small">Show</button>
+            </div>
         </div>
-        
-        <footer>DebugOTool &copy; 2026 • Bookmarklet version (avoids iframe CORS errors)</footer>
+        <div class="log-container" id="apiLogContainer" style="display:none; max-height:180px;"></div>
+
+        <hr />
+
+        <!-- Console Logs -->
+        <div class="section-header">
+            <span class="label">📋 Console Logs <span class="badge" id="consoleBadge">0</span></span>
+            <div class="actions">
+                <button id="copyConsoleBtn" class="btn-small copy-btn" title="Copy console logs">📋 Copy</button>
+                <button id="clearConsoleBtn" class="btn-small danger-btn">Clear</button>
+            </div>
+        </div>
+        <div class="log-container" id="consoleLogContainer" style="max-height:180px;"></div>
+
+        <hr />
+
+        <!-- JS Console -->
+        <div class="section-header">
+            <span class="label">🖥️ JavaScript Console</span>
+            <div class="actions">
+                <button id="clearConsoleOutputBtn" class="btn-small danger-btn">Clear</button>
+            </div>
+        </div>
+        <div id="consoleOutput">> Ready</div>
+        <div id="consoleInputArea">
+            <input type="text" id="consoleInput" placeholder="Enter JS (e.g. typeof loadPricingSettings)" spellcheck="false" />
+            <button id="runConsoleBtn" class="btn-small primary-btn">Run</button>
+        </div>
     </div>
 
+    <!-- Toast -->
+    <div id="debugToast" class="debug-toast"></div>
+
+    <!-- ============================================================
+    JAVASCRIPT – Full DebugOTool v3.1
+    ============================================================ -->
     <script>
-        document.getElementById('copyBtn').addEventListener('click', function() {
-            const code = document.getElementById('bookmarkletCode').innerText;
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(code).then(() => {
-                    this.textContent = '✅ Copied!';
-                    setTimeout(() => this.textContent = '📋 Copy Bookmarklet Code', 2000);
-                });
-            } else {
-                const ta = document.createElement('textarea');
-                ta.value = code;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                ta.remove();
-                this.textContent = '✅ Copied!';
-                setTimeout(() => this.textContent = '📋 Copy Bookmarklet Code', 2000);
+        (function() {
+            'use strict';
+
+            // ---------- TOAST ----------
+            let toastTimer = null;
+
+            function showToast(msg, type) {
+                const el = document.getElementById('debugToast');
+                if (!el) return;
+                clearTimeout(toastTimer);
+                el.textContent = msg;
+                el.className = 'debug-toast ' + (type || '');
+                // force reflow
+                void el.offsetWidth;
+                el.classList.add('show');
+                toastTimer = setTimeout(() => {
+                    el.classList.remove('show');
+                }, 2200);
             }
-        });
+
+            // ---------- CONSOLE LOG INTERCEPTOR ----------
+            const consoleLogs = [];
+            const originalLog = console.log;
+            const originalError = console.error;
+            const originalWarn = console.warn;
+
+            function addConsoleEntry(type, args) {
+                const message = args.map(a =>
+                    typeof a === 'object' ? (a === null ? 'null' : JSON.stringify(a, null, 0)) : String(a)
+                ).join(' ');
+                consoleLogs.push({ type, time: new Date().toISOString(), message });
+                updateConsoleDisplay();
+                updateBadge('consoleBadge', consoleLogs.length);
+            }
+
+            console.log = function(...args) {
+                addConsoleEntry('log', args);
+                originalLog.apply(console, args);
+            };
+            console.error = function(...args) {
+                addConsoleEntry('error', args);
+                originalError.apply(console, args);
+            };
+            console.warn = function(...args) {
+                addConsoleEntry('warn', args);
+                originalWarn.apply(console, args);
+            };
+
+            function updateConsoleDisplay() {
+                const container = document.getElementById('consoleLogContainer');
+                if (!container) return;
+                if (consoleLogs.length === 0) {
+                    container.innerHTML = '<div style="color:#4a5a6a; font-style:italic; padding:4px 0;">(no logs)</div>';
+                    return;
+                }
+                container.innerHTML = consoleLogs.map(entry =>
+                    `<div class="log-entry">
+                        <span class="log-time">${entry.time.slice(5,16)}</span>
+                        <span class="log-type ${entry.type}">${entry.type}</span>
+                        <span class="log-msg">${entry.message}</span>
+                    </div>`
+                ).join('');
+                container.scrollTop = container.scrollHeight;
+            }
+
+            function updateBadge(id, count) {
+                const el = document.getElementById(id);
+                if (el) el.textContent = count;
+            }
+
+            // ---------- API LOG INTERCEPTOR ----------
+            const apiLogs = [];
+            let apiLogVisible = false;
+
+            function updateApiLogDisplay() {
+                const container = document.getElementById('apiLogContainer');
+                if (!container) return;
+                if (apiLogs.length === 0) {
+                    container.innerHTML = '<div style="color:#4a5a6a; font-style:italic; padding:4px 0;">(no API calls)</div>';
+                    return;
+                }
+                container.innerHTML = apiLogs.map(e => {
+                    const statusClass = (e.response.status === 'ERROR' || e.response.status >= 400) ? 'err' : 'ok';
+                    const statusText = typeof e.response.status === 'number' ? e.response.status : 'ERR';
+                    return `<div class="api-log-entry">
+                        <span class="api-time">${e.time.slice(5,16)}</span>
+                        <span class="api-status ${statusClass}">${statusText}</span>
+                        <span class="api-method">${e.method}</span>
+                        <span class="api-url">${e.url}</span>
+                    </div>`;
+                }).join('');
+                container.scrollTop = container.scrollHeight;
+                updateBadge('apiBadge', apiLogs.length);
+            }
+
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                const options = args[1] || {};
+                const method = options.method || 'GET';
+                let body = options.body;
+                if (body && typeof body === 'string') {
+                    try { body = JSON.parse(body); } catch (_) {}
+                }
+                return originalFetch.apply(this, args).then(async (response) => {
+                    const cloned = response.clone();
+                    let resBody;
+                    try {
+                        const text = await cloned.text();
+                        try { resBody = JSON.parse(text); } catch (_) { resBody = text; }
+                    } catch (_) { resBody = 'Unable to read response'; }
+                    apiLogs.push({
+                        time: new Date().toISOString(),
+                        url: url,
+                        method: method,
+                        request: body,
+                        response: { status: response.status, body: resBody }
+                    });
+                    if (apiLogVisible) updateApiLogDisplay();
+                    return response;
+                }).catch(err => {
+                    apiLogs.push({
+                        time: new Date().toISOString(),
+                        url: url,
+                        method: method,
+                        request: body,
+                        response: { status: 'ERROR', body: err.message }
+                    });
+                    if (apiLogVisible) updateApiLogDisplay();
+                    throw err;
+                });
+            };
+
+            // ---------- UI CONTROLS ----------
+            const toggleBtn = document.getElementById('debugToggleBtn');
+            const panel = document.getElementById('debugPanel');
+            const header = document.getElementById('debugPanelHeader');
+            const copyBtn = document.getElementById('copyDebugBtn');
+            const clearBtn = document.getElementById('clearDebugBtn');
+            const toggleApiBtn = document.getElementById('toggleApiLogBtn');
+            const apiContainer = document.getElementById('apiLogContainer');
+            const copyApiBtn = document.getElementById('copyApiBtn');
+            const copyConsoleBtn = document.getElementById('copyConsoleBtn');
+
+            let debugPanelVisible = false;
+            let dragDistance = 0;
+            let isDraggingBtn = false;
+            let btnOffsetX, btnOffsetY, startX, startY;
+
+            // ---------- DRAGGABLE BUTTON ----------
+            function loadBtnPosition() {
+                const savedTop = localStorage.getItem('debugBtnTop');
+                const savedLeft = localStorage.getItem('debugBtnLeft');
+                if (savedTop && savedLeft) {
+                    toggleBtn.style.top = savedTop + 'px';
+                    toggleBtn.style.left = savedLeft + 'px';
+                    toggleBtn.style.bottom = 'auto';
+                    toggleBtn.style.right = 'auto';
+                } else {
+                    toggleBtn.style.bottom = '20px';
+                    toggleBtn.style.right = '20px';
+                    toggleBtn.style.top = 'auto';
+                    toggleBtn.style.left = 'auto';
+                }
+            }
+
+            function saveBtnPosition() {
+                localStorage.setItem('debugBtnTop', toggleBtn.style.top);
+                localStorage.setItem('debugBtnLeft', toggleBtn.style.left);
+            }
+            loadBtnPosition();
+
+            // Mouse drag
+            toggleBtn.addEventListener('mousedown', (e) => {
+                const rect = toggleBtn.getBoundingClientRect();
+                btnOffsetX = e.clientX - rect.left;
+                btnOffsetY = e.clientY - rect.top;
+                isDraggingBtn = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                dragDistance = 0;
+                toggleBtn.style.top = rect.top + 'px';
+                toggleBtn.style.left = rect.left + 'px';
+                toggleBtn.style.bottom = 'auto';
+                toggleBtn.style.right = 'auto';
+                e.preventDefault();
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDraggingBtn) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                dragDistance = Math.sqrt(dx * dx + dy * dy);
+                toggleBtn.style.left = (e.clientX - btnOffsetX) + 'px';
+                toggleBtn.style.top = (e.clientY - btnOffsetY) + 'px';
+                saveBtnPosition();
+            });
+            document.addEventListener('mouseup', () => { isDraggingBtn = false; });
+
+            // Touch drag
+            toggleBtn.addEventListener('touchstart', (e) => {
+                const touch = e.touches[0];
+                const rect = toggleBtn.getBoundingClientRect();
+                btnOffsetX = touch.clientX - rect.left;
+                btnOffsetY = touch.clientY - rect.top;
+                isDraggingBtn = true;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                dragDistance = 0;
+                toggleBtn.style.top = rect.top + 'px';
+                toggleBtn.style.left = rect.left + 'px';
+                toggleBtn.style.bottom = 'auto';
+                toggleBtn.style.right = 'auto';
+            }, { passive: true });
+            document.addEventListener('touchmove', (e) => {
+                if (!isDraggingBtn) return;
+                const touch = e.touches[0];
+                const dx = touch.clientX - startX;
+                const dy = touch.clientY - startY;
+                dragDistance = Math.sqrt(dx * dx + dy * dy);
+                toggleBtn.style.left = (touch.clientX - btnOffsetX) + 'px';
+                toggleBtn.style.top = (touch.clientY - btnOffsetY) + 'px';
+                saveBtnPosition();
+                e.preventDefault();
+            }, { passive: false });
+            document.addEventListener('touchend', () => { isDraggingBtn = false; });
+
+            // ---------- PANEL DRAGGING ----------
+            let isDraggingPanel = false;
+            let panelOffsetX, panelOffsetY;
+
+            header.addEventListener('mousedown', (e) => {
+                if (e.target.closest('button')) return;
+                isDraggingPanel = true;
+                const rect = panel.getBoundingClientRect();
+                panelOffsetX = e.clientX - rect.left;
+                panelOffsetY = e.clientY - rect.top;
+                panel.style.bottom = 'auto';
+                panel.style.right = 'auto';
+                panel.style.top = rect.top + 'px';
+                panel.style.left = rect.left + 'px';
+                header.style.cursor = 'grabbing';
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDraggingPanel) return;
+                e.preventDefault();
+                panel.style.top = (e.clientY - panelOffsetY) + 'px';
+                panel.style.left = (e.clientX - panelOffsetX) + 'px';
+                localStorage.setItem('debugPanelTop', panel.style.top);
+                localStorage.setItem('debugPanelLeft', panel.style.left);
+            });
+            document.addEventListener('mouseup', () => {
+                if (isDraggingPanel) {
+                    isDraggingPanel = false;
+                    header.style.cursor = 'grab';
+                }
+            });
+
+            // ---------- TOGGLE PANEL ----------
+            toggleBtn.addEventListener('click', function(e) {
+                if (dragDistance > 5) return;
+                debugPanelVisible = !debugPanelVisible;
+                panel.style.display = debugPanelVisible ? 'block' : 'none';
+                if (debugPanelVisible) {
+                    const savedTop = localStorage.getItem('debugPanelTop');
+                    const savedLeft = localStorage.getItem('debugPanelLeft');
+                    if (savedTop && savedLeft) {
+                        panel.style.bottom = 'auto';
+                        panel.style.right = 'auto';
+                        panel.style.top = savedTop + 'px';
+                        panel.style.left = savedLeft + 'px';
+                    } else {
+                        panel.style.bottom = '90px';
+                        panel.style.right = '10px';
+                        panel.style.top = 'auto';
+                        panel.style.left = 'auto';
+                    }
+                    updateDebugInfo();
+                    updateConsoleDisplay();
+                    if (apiLogVisible) updateApiLogDisplay();
+                    updateBadge('apiBadge', apiLogs.length);
+                    updateBadge('consoleBadge', consoleLogs.length);
+                }
+            });
+
+            function updateDebugInfo() {
+                const token = localStorage.getItem('authToken') || 'No token';
+                const displayToken = token.length > 28 ? token.substring(0, 26) + '…' : token;
+                document.getElementById('debugToken').textContent = displayToken;
+                let clientCode = 'N/A',
+                    email = 'N/A';
+                try {
+                    const parts = token.split('.');
+                    if (parts.length === 3) {
+                        const payload = JSON.parse(atob(parts[1]));
+                        clientCode = payload.clientCode || 'N/A';
+                        email = payload.email || 'N/A';
+                    }
+                } catch (_) {}
+                document.getElementById('debugClientCode').textContent = clientCode;
+                document.getElementById('debugEmail').textContent = email;
+                document.getElementById('debugFranchise').textContent = localStorage.getItem('selectedFranchiseCode') ||
+                'all';
+            }
+
+            // ---------- COPY FULL REPORT ----------
+            copyBtn.addEventListener('click', function() {
+                const token = document.getElementById('debugToken').textContent;
+                const clientCode = document.getElementById('debugClientCode').textContent;
+                const email = document.getElementById('debugEmail').textContent;
+                const franchise = document.getElementById('debugFranchise').textContent;
+                const apiText = apiLogs.map(e =>
+                    `${e.time} | ${e.method} ${e.url} → ${e.response.status}`
+                ).join('\n');
+                const consoleText = consoleLogs.map(l =>
+                    `${l.time} [${l.type.toUpperCase()}] ${l.message}`
+                ).join('\n');
+                const report =
+                    `=== DEBUG REPORT ===\nToken: ${token}\nClient Code: ${clientCode}\nEmail: ${email}\nFranchise: ${franchise}\n\n--- API Log (${apiLogs.length} entries) ---\n${apiText || '(empty)'}\n\n--- Console Logs (${consoleLogs.length} entries) ---\n${consoleText || '(empty)'}\n=== END ===`;
+                copyToClipboard(report, '📋 Full report copied!');
+            });
+
+            // ---------- CLEAR API LOGS ----------
+            clearBtn.addEventListener('click', function() {
+                apiLogs.length = 0;
+                if (apiLogVisible) updateApiLogDisplay();
+                updateBadge('apiBadge', 0);
+                showToast('🗑️ API logs cleared', '');
+            });
+
+            // ---------- TOGGLE API LOG ----------
+            toggleApiBtn.addEventListener('click', function() {
+                apiLogVisible = !apiLogVisible;
+                apiContainer.style.display = apiLogVisible ? 'block' : 'none';
+                this.textContent = apiLogVisible ? 'Hide' : 'Show';
+                if (apiLogVisible) updateApiLogDisplay();
+            });
+
+            // ---------- COPY API LOGS ----------
+            copyApiBtn.addEventListener('click', function() {
+                if (apiLogs.length === 0) {
+                    showToast('📭 No API logs to copy', '');
+                    return;
+                }
+                const text = apiLogs.map(e =>
+                    `${e.time} | ${e.method} ${e.url} → ${e.response.status}${e.response.status !== 'ERROR' && typeof e.response.status === 'number' ? ' ' + (e.response.body ? JSON.stringify(e.response.body).slice(0, 120) : '') : ''}`
+                ).join('\n');
+                copyToClipboard(text, '📋 ' + apiLogs.length + ' API log(s) copied!');
+            });
+
+            // ---------- COPY CONSOLE LOGS ----------
+            copyConsoleBtn.addEventListener('click', function() {
+                if (consoleLogs.length === 0) {
+                    showToast('📭 No console logs to copy', '');
+                    return;
+                }
+                const text = consoleLogs.map(l =>
+                    `${l.time} [${l.type.toUpperCase()}] ${l.message}`
+                ).join('\n');
+                copyToClipboard(text, '📋 ' + consoleLogs.length + ' console log(s) copied!');
+            });
+
+            // ---------- CLEAR CONSOLE LOGS ----------
+            document.getElementById('clearConsoleBtn').addEventListener('click', function() {
+                consoleLogs.length = 0;
+                updateConsoleDisplay();
+                updateBadge('consoleBadge', 0);
+                showToast('🗑️ Console logs cleared', '');
+            });
+
+            // ---------- CLIPBOARD HELPER ----------
+            function copyToClipboard(text, successMsg) {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast(successMsg || '✅ Copied!', 'success');
+                    }).catch(() => {
+                        fallbackCopy(text, successMsg);
+                    });
+                } else {
+                    fallbackCopy(text, successMsg);
+                }
+            }
+
+            function fallbackCopy(text, successMsg) {
+                try {
+                    const blob = new Blob([text], { type: 'text/plain' });
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'debug_logs.txt';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    showToast('📥 Downloaded as .txt', 'success');
+                } catch (_) {
+                    showToast('❌ Could not copy', 'error');
+                }
+            }
+
+            // ---------- JAVASCRIPT CONSOLE ----------
+            const consoleOutput = document.getElementById('consoleOutput');
+            const consoleInput = document.getElementById('consoleInput');
+            const runBtn = document.getElementById('runConsoleBtn');
+
+            function runConsoleCommand() {
+                const input = consoleInput.value.trim();
+                if (!input) return;
+                let result;
+                try {
+                    result = eval(input);
+                    const output = typeof result !== 'undefined' ?
+                        (typeof result === 'object' ? JSON.stringify(result, null, 2) : String(result)) :
+                        'undefined';
+                    consoleOutput.textContent += `> ${input}\n${output}\n\n`;
+                } catch (e) {
+                    consoleOutput.textContent += `> ${input}\n❌ ${e.message}\n\n`;
+                }
+                consoleInput.value = '';
+                consoleOutput.scrollTop = consoleOutput.scrollHeight;
+            }
+
+            runBtn.addEventListener('click', runConsoleCommand);
+            consoleInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    runConsoleCommand();
+                }
+            });
+
+            document.getElementById('clearConsoleOutputBtn').addEventListener('click', function() {
+                consoleOutput.textContent = '> Cleared';
+                showToast('🗑️ JS console cleared', '');
+            });
+
+            // ---------- INIT ----------
+            updateConsoleDisplay();
+            updateBadge('consoleBadge', 0);
+            updateBadge('apiBadge', 0);
+            console.log('🐞 DebugOTool v3.1 loaded.');
+            console.log('💡 Improvements: copy buttons for API & Console logs, badges, toast notifications.');
+        })();
     </script>
 </body>
 </html>
