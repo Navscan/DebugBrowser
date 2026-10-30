@@ -4,7 +4,7 @@
 
 DebugBrowser is a specialized, ultra-lightweight Android WebView wrapper designed to inject `DebugOTool`—a fully featured, Shadow DOM-isolated developer console—into any web application. It bridges the gap between desktop DevTools and mobile testing, allowing developers and QA engineers to inspect network traffic, view console logs, manipulate local storage, and traverse the DOM directly on a mobile device.
 
-## The 16KB Build Hack (The Massive Flex)
+## The 16KB Build Hack
 
 Most standard Android projects rely on Gradle, which pulls in megabytes of support libraries, Kotlin runtimes, and boilerplate resources, resulting in a bloated APK (usually 2MB+ for a simple WebView).
 
@@ -16,7 +16,7 @@ Using a custom shell script executed via Termux, this project manually compiles 
 3.  **`dx`**: Converts the Java classes into Dalvik Executable (`.dex`) format.
 4.  **`apksigner`**: Signs the final packaged APK.
 
-By stripping away all modern Android bloat and relying strictly on native Android SDK components, we achieve a functional, highly capable WebView browser in an **unbelievably tiny 16.89 KB APK file**. 
+By stripping away all modern Android bloat and relying strictly on native Android SDK components, we achieve a functional, highly capable WebView browser in an unbelievably tiny 16.89 KB APK file.
 
 ### Build Scripts Included
 - `env_vari.bash`: Sets the Termux environment variables for the Android SDK.
@@ -38,9 +38,9 @@ The injected `DebugOTool.js` (v5.2) operates entirely inside a **Shadow DOM**, e
 
 ## Deep Device Introspection (No Mask)
 
-Because the app bridges the WebView and the native Android layer, it can extract highly specific device data without obfuscation. 
+Because the app bridges the WebView and the native Android layer, it can extract highly specific device data without obfuscation.
 - **Un-masked Tokens**: Extracts JWT payloads, client codes, emails, and franchise IDs directly from the page's local storage.
-- **Device Fingerprinting**: Captures the exact `navigator.userAgent`, screen resolution, device pixel ratio, and hardware concurrency. 
+- **Device Fingerprinting**: Captures the exact `navigator.userAgent`, screen resolution, device pixel ratio, and hardware concurrency.
 - **Header Injection**: The native `DownloadManager` bypasses standard browser restrictions, allowing raw text reports to be saved directly to the device's scoped storage.
 
 ## Architecture
