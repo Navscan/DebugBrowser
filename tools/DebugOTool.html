@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>DebugOTool – Bookmarklet Launcher</title>
+    <link rel="stylesheet" href="DebugOTool.css" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🐞 DebugOTool <span class="badge">v2.0</span></h1>
+            <p class="sub">Inject the debug bar + panel into any staging page.</p>
+        </header>
+
+        <div class="card">
+            <h2>📌 Step 1: Host the script</h2>
+            <p>Place <code>DebugOTool.js</code> and <code>DebugOTool.css</code> in your staging folder. 
+            <br><em>Example: <code>/var/www/staging.treasuretrail/tools/</code></em></p>
+        </div>
+
+        <div class="card gold-border">
+            <h2>📋 Step 2: Create the Bookmarklet</h2>
+            <p>Copy the code below, create a new bookmark in your browser, and paste it into the <strong>URL field</strong>.</p>
+            
+            <div class="code-container">
+                <code id="bookmarkletCode">javascript:(function(){var s=document.createElement('script');s.src='https://staging.treasuretrail.africa/tools/DebugOTool.js';document.head.appendChild(s);})();</code>
+            </div>
+            
+            <button id="copyBtn" class="primary-btn">📋 Copy Bookmarklet Code</button>
+        </div>
+
+        <div class="card">
+            <h2>📱 Step 3: Download DebugBrowser APK</h2>
+            <p>Get the native Android app with built‑in debugging:</p>
+            <a href="/downloads/DebugBrowser.apk" class="primary-btn" download>⬇️ Download APK</a>
+        </div>
+
+        <div class="card">
+            <h2>🚀 Step 4: How to use it</h2>
+            <ol>
+                <li>Open your staging Onboarding page (<code>https://staging.treasuretrail.africa/onboarding</code>).</li>
+                <li>Tap your browser bookmarks and select <strong>"DebugOTool"</strong>.</li>
+                <li>The gold debug bar and 🐞 button will instantly appear on the page!</li>
+            </ol>
+        </div>
+        
+        <footer>DebugOTool &copy; 2026 • Bookmarklet version (avoids iframe CORS errors)</footer>
+    </div>
+
+    <script>
+        document.getElementById('copyBtn').addEventListener('click', function() {
+            const code = document.getElementById('bookmarkletCode').innerText;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(code).then(() => {
+                    this.textContent = '✅ Copied!';
+                    setTimeout(() => this.textContent = '📋 Copy Bookmarklet Code', 2000);
+                });
+            } else {
+                const ta = document.createElement('textarea');
+                ta.value = code;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                ta.remove();
+                this.textContent = '✅ Copied!';
+                setTimeout(() => this.textContent = '📋 Copy Bookmarklet Code', 2000);
+            }
+        });
+    </script>
+</body>
+</html>
